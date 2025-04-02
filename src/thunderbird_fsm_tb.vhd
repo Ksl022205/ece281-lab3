@@ -50,35 +50,64 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
-  
 entity thunderbird_fsm_tb is
 end thunderbird_fsm_tb;
 
-architecture test_bench of thunderbird_fsm_tb is 
-	
-	component thunderbird_fsm is 
---	  port(
-		
---	  );
-	end component thunderbird_fsm;
-
-	-- test I/O signals
-	
-	-- constants
-	
-	
-begin
-	-- PORT MAPS ----------------------------------------
-	
-	-----------------------------------------------------
-	
-	-- PROCESSES ----------------------------------------	
-    -- Clock process ------------------------------------
+architecture testbench of thunderbird_fsm_tb is
+    signal i_clk, i_reset, i_left, i_right: std_logic := '0';
+    signal o_lights_L, o_lights_R: std_logic_vector(2 downto 0);
+    constant clk_period: time := 10 ns;
     
-	-----------------------------------------------------
-	
-	-- Test Plan Process --------------------------------
-	
-	-----------------------------------------------------	
-	
-end test_bench;
+    component thunderbird_fsm
+        port (
+            i_clk, i_reset  : in    std_logic;
+            i_left, i_right : in    std_logic;
+            o_lights_L      : out   std_logic_vector(2 downto 0);
+            o_lights_R      : out   std_logic_vector(2 downto 0)
+        );
+    end component;
+    
+begin
+    uut: thunderbird_fsm
+    port map (
+        i_clk => i_clk,
+        i_reset => i_reset,
+        i_left => i_left,
+        i_right => i_right,
+        o_lights_L => o_lights_L,
+        o_lights_R => o_lights_R
+    );
+    
+    process
+    begin
+        i_clk <= '0';
+        wait for clk_period / 2;
+        i_clk <= '1';
+        wait for clk_period / 2;
+    end process;
+    
+    process
+    begin
+        -- Reset the FSM
+        i_reset <= '1';
+        wait for 20 ns;
+        i_reset <= '0';
+        
+        -- Test left turn signal
+        i_left <= '1'; i_right <= '0';
+        wait for 50 ns;
+        i_left <= '0';
+        
+        -- Test right turn signal
+        i_left <= '0'; i_right <= '1';
+        wait for 50 ns;
+        i_right <= '0';
+        
+        -- Test hazard lights
+        i_left <= '1'; i_right <= '1';
+        wait for 50 ns;
+        i_left <= '0'; i_right <= '0';
+        
+        wait;
+    end process;
+end testbench;
