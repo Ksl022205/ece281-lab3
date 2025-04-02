@@ -57,50 +57,68 @@
 --|
 --+----------------------------------------------------------------------------
 library ieee;
-  use ieee.std_logic_1164.all;
-  use ieee.numeric_std.all;
-
-
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 entity top_basys3 is
-	port(
-
-		clk     :   in std_logic; -- native 100MHz FPGA clock
-		
-		-- Switches (16 total)
-		sw  	:   in std_logic_vector(15 downto 0); -- sw(15) = left; sw(0) = right
-
-		-- LEDs (16 total)
-		-- taillights (LC, LB, LA, RA, RB, RC)
-		led 	:   out std_logic_vector(15 downto 0);  -- led(15:13) --> L
-                                                        -- led(2:0)   --> R
-		
-		-- Buttons (5 total)
-		--btnC	:	in	std_logic
-		--btnU	:	in	std_logic;
-		btnL	:	in	std_logic;                    -- clk_reset
-		btnR	:	in	std_logic	                  -- fsm_reset
-		--btnD	:	in	std_logic;	
-	);
+    port (
+        clk   : in  std_logic;                        -- 100 MHz clock
+        sw    : in  std_logic_vector(15 downto 0);    -- switches (sw15 = left, sw0 = right)
+        led   : out std_logic_vector(15 downto 0);    -- LEDs (15:13 = L, 2:0 = R)
+        btnC  : in  std_logic;
+        btnU  : in  std_logic;
+        btnL  : in  std_logic;                        -- clock reset
+        btnR  : in  std_logic;                        -- FSM reset
+        btnD  : in  std_logic
+    );
 end top_basys3;
-
-architecture top_basys3_arch of top_basys3 is 
-  
-	-- declare components
-
-  
+architecture top_basys3_arch of top_basys3 is
+    -- COMPONENT DECLARATIONS ----------------------------
+    component thunderbird_fsm
+        port (
+            i_clk       : in  std_logic;
+            i_reset     : in  std_logic;
+            i_left      : in  std_logic;
+            i_right     : in  std_logic;
+            o_lights_L  : out std_logic_vector(2 downto 0);
+            o_lights_R  : out std_logic_vector(2 downto 0)
+        );
+    end component;
+    component clock_divider is
+        generic (
+            k_DIV : natural := 2
+        );
+        port (
+            i_clk   : in  std_logic;
+            i_reset : in  std_logic;
+            o_clk   : out std_logic
+        );
+    end component;
+    -- INTERNAL SIGNALS ----------------------------------
+    signal slow_clk    : std_logic;
+    signal lights_L    : std_logic_vector(2 downto 0);
+    signal lights_R    : std_logic_vector(2 downto 0);
 begin
-	-- PORT MAPS ----------------------------------------
-
-	
-	
-	-- CONCURRENT STATEMENTS ----------------------------
-	
-	-- ground unused LEDs
-	-- leave unused switches UNCONNECTED
-	
-	-- Ignore the warnings associated with these signals
-	-- Alternatively, you can create a different board implementation, 
-	--   or make additional adjustments to the constraints file
-	led(12 downto 3) <= (others => '0');
-	
+    -- CLOCK DIVIDER INSTANCE ----------------------------
+    clk_div: clock_divider
+        generic map (k_DIV => 25000000)  -- 100 MHz ÷ 25M = ~4 Hz
+        port map (
+            i_clk   => clk,
+            i_reset => btnL,             -- clock reset
+            o_clk   => slow_clk
+        );
+    -- FSM INSTANCE ---------------------------------------
+    fsm: thunderbird_fsm
+        port map (
+            i_clk      => slow_clk,
+            i_reset    => btnR,
+            i_left     => sw(15),
+            i_right    => sw(0),
+            o_lights_L => lights_L,
+            o_lights_R => lights_R
+        );
+    -- OUTPUT ASSIGNMENTS -------------------------------
+    led(15 downto 13) <= lights_L;       -- LC, LB, LA
+    led(2 downto 0)   <= lights_R;       -- RA, RB, RC
+    -- GROUND UNUSED LEDs -------------------------------
+    led(12 downto 3) <= (others => '0');
 end top_basys3_arch;
