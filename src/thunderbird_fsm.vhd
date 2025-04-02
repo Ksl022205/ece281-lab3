@@ -85,24 +85,77 @@ library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
  
-entity thunderbird_fsm is 
---  port(
-	
---  );
+ 
+entity thunderbird_fsm is
+    port (
+        i_clk, i_reset  : in    std_logic;
+        i_left, i_right : in    std_logic;
+        o_lights_L      : out   std_logic_vector(2 downto 0);
+        o_lights_R      : out   std_logic_vector(2 downto 0)
+    );
 end thunderbird_fsm;
 
-architecture thunderbird_fsm_arch of thunderbird_fsm is 
-
--- CONSTANTS ------------------------------------------------------------------
-  
-begin
-
-	-- CONCURRENT STATEMENTS --------------------------------------------------------	
-	
-    ---------------------------------------------------------------------------------
-	
-	-- PROCESSES --------------------------------------------------------------------
+architecture Behavioral of thunderbird_fsm is
+    type state_type is (OFF, L1, L2, L3, R1, R2, R3, HAZARD);
+    signal current_state, next_state: state_type;
     
-	-----------------------------------------------------					   
-				  
-end thunderbird_fsm_arch;
+    begin
+    
+    process(i_clk, i_reset)
+    begin
+        if i_reset = '1' then
+            current_state <= OFF;
+        elsif rising_edge(i_clk) then
+            current_state <= next_state;
+        end if;
+    end process;
+    
+    process(current_state, i_left, i_right)
+    begin
+        case current_state is
+            when OFF =>
+                if i_left = '1' and i_right = '0' then
+                    next_state <= L1;
+                elsif i_right = '1' and i_left = '0' then
+                    next_state <= R1;
+                elsif i_left = '1' and i_right = '1' then
+                    next_state <= HAZARD;
+                else
+                    next_state <= OFF;
+                end if;
+            
+            when L1 => next_state <= L2;
+            when L2 => next_state <= L3;
+            when L3 => next_state <= OFF;
+            
+            when R1 => next_state <= R2;
+            when R2 => next_state <= R3;
+            when R3 => next_state <= OFF;
+            
+            when HAZARD =>
+                if i_left = '0' and i_right = '0' then
+                    next_state <= OFF;
+                else
+                    next_state <= HAZARD;
+                end if;
+            
+            when others => next_state <= OFF;
+        end case;
+    end process;
+    
+    process(current_state)
+    begin
+        case current_state is
+            when OFF    => o_lights_L <= "000"; o_lights_R <= "000";
+            when L1     => o_lights_L <= "100"; o_lights_R <= "000";
+            when L2     => o_lights_L <= "110"; o_lights_R <= "000";
+            when L3     => o_lights_L <= "111"; o_lights_R <= "000";
+            when R1     => o_lights_L <= "000"; o_lights_R <= "100";
+            when R2     => o_lights_L <= "000"; o_lights_R <= "110";
+            when R3     => o_lights_L <= "000"; o_lights_R <= "111";
+            when HAZARD => o_lights_L <= "111"; o_lights_R <= "111";
+            when others => o_lights_L <= "000"; o_lights_R <= "000";
+        end case;
+    end process;
+    
+end Behavioral;
