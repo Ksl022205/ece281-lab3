@@ -84,8 +84,7 @@
 library ieee;
   use ieee.std_logic_1164.all;
   use ieee.numeric_std.all;
- 
- 
+
 entity thunderbird_fsm is
     port (
         i_clk, i_reset  : in    std_logic;
@@ -128,7 +127,7 @@ begin
             when L2 => next_state <= L3;
             when L3 => 
                 if i_left = '1' then
-                    next_state <= L1;  -- Fix: Repeat left sequence if still held
+                    next_state <= L1;
                 else
                     next_state <= OFF;
                 end if;
@@ -137,7 +136,7 @@ begin
             when R2 => next_state <= R3;
             when R3 => 
                 if i_right = '1' then
-                    next_state <= R1;  -- Fix: Repeat right sequence if still held
+                    next_state <= R1;
                 else
                     next_state <= OFF;
                 end if;
@@ -157,11 +156,11 @@ begin
     begin
         case current_state is
             when OFF    => o_lights_L <= "000"; o_lights_R <= "000";
-            when L1     => o_lights_L <= "100"; o_lights_R <= "000";
-            when L2     => o_lights_L <= "110"; o_lights_R <= "000";
+            when L1     => o_lights_L <= "001"; o_lights_R <= "000";
+            when L2     => o_lights_L <= "011"; o_lights_R <= "000";
             when L3     => o_lights_L <= "111"; o_lights_R <= "000";
-            when R1     => o_lights_L <= "000"; o_lights_R <= "100";
-            when R2     => o_lights_L <= "000"; o_lights_R <= "110";
+            when R1     => o_lights_L <= "000"; o_lights_R <= "001";
+            when R2     => o_lights_L <= "000"; o_lights_R <= "011";
             when R3     => o_lights_L <= "000"; o_lights_R <= "111";
             when HAZARD => o_lights_L <= "111"; o_lights_R <= "111";
             when others => o_lights_L <= "000"; o_lights_R <= "000";
