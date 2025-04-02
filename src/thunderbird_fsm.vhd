@@ -159,8 +159,8 @@ begin
             when L1     => o_lights_L <= "001"; o_lights_R <= "000";
             when L2     => o_lights_L <= "011"; o_lights_R <= "000";
             when L3     => o_lights_L <= "111"; o_lights_R <= "000";
-            when R1     => o_lights_L <= "000"; o_lights_R <= "001";
-            when R2     => o_lights_L <= "000"; o_lights_R <= "011";
+            when R1     => o_lights_L <= "000"; o_lights_R <= "100";
+            when R2     => o_lights_L <= "000"; o_lights_R <= "110";
             when R3     => o_lights_L <= "000"; o_lights_R <= "111";
             when HAZARD => o_lights_L <= "111"; o_lights_R <= "111";
             when others => o_lights_L <= "000"; o_lights_R <= "000";
