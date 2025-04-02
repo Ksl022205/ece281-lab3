@@ -48,97 +48,76 @@
 --|
 --+----------------------------------------------------------------------------
 library ieee;
-  use ieee.std_logic_1164.all;
-  use ieee.numeric_std.all;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 entity thunderbird_fsm_tb is
 end thunderbird_fsm_tb;
-
-architecture behavior of thunderbird_fsm_tb is
-
-    -- Component declaration for the Unit Under Test (UUT)
-    component thunderbird_fsm
-        port (
-            i_clk      : in  std_logic;
-            i_reset    : in  std_logic;
-            i_left     : in  std_logic;
-            i_right    : in  std_logic;
-            o_lights_L : out std_logic_vector(2 downto 0);
-            o_lights_R : out std_logic_vector(2 downto 0)
-        );
-    end component;
-
-    -- Signals for the testbench
-    signal i_clk      : std_logic := '0';
-    signal i_reset    : std_logic := '0';
-    signal i_left     : std_logic := '0';
-    signal i_right    : std_logic := '0';
-    signal o_lights_L : std_logic_vector(2 downto 0);
-    signal o_lights_R : std_logic_vector(2 downto 0);
-
-    -- Clock period definition
-    constant clk_period : time := 10 ns;
-
+architecture test_bench of thunderbird_fsm_tb is 
+	component thunderbird_fsm is 
+	   port(
+	       i_clk, i_reset : in std_logic;
+	       i_left, i_right: in std_logic;
+	       o_lights_L     : out std_logic_vector(2 downto 0);
+	       o_lights_R     : out std_logic_vector(2 downto 0)
+	   );
+	end component;
+	-- Signals
+	signal w_R : std_logic := '0';
+	signal w_RL : std_logic_vector(1 downto 0) := "00";
+	signal w_clk : std_logic := '0';
+	signal w_lights : std_logic_vector(5 downto 0) := "000000";
+	constant k_clk_period : time := 10 ns;
 begin
-
-    -- Instantiate the Unit Under Test (UUT)
-    uut: thunderbird_fsm port map (
-        i_clk      => i_clk,
-        i_reset    => i_reset,
-        i_left     => i_left,
-        i_right    => i_right,
-        o_lights_L => o_lights_L,
-        o_lights_R => o_lights_R
-    );
-
-    -- Clock process definition
-    clk_process :process
-    begin
-        i_clk <= '0';
-        wait for clk_period/2;
-        i_clk <= '1';
-        wait for clk_period/2;
-    end process;
-
-    -- Stimulus process (test cases)
-    stim_proc: process
-    begin
-        -- Reset the FSM
-        i_reset <= '1';
-        wait for 20 ns;
-        i_reset <= '0';
-
-        -- Test Case 1: Left turn transition from OFF state
-        i_left <= '1';
-        i_right <= '0';
-        wait for 40 ns;  -- Wait for FSM to process the transition
-        
-        -- Test Case 2: Right turn transition from OFF state
-        i_left <= '0';
-        i_right <= '1';
-        wait for 40 ns;  -- Wait for FSM to process the transition
-        
-        -- Test Case 3: Both left and right, which should turn ON state
-        i_left <= '1';
-        i_right <= '1';
-        wait for 40 ns;
-        
-        -- Test Case 4: No input (OFF state)
-        i_left <= '0';
-        i_right <= '0';
-        wait for 40 ns;
-        
-        -- Test Case 5: Left turn sequence L1 -> L2 -> L3 -> OFF
-        i_left <= '1'; i_right <= '0'; -- L1
-        wait for 40 ns;
-        i_left <= '1'; i_right <= '0'; -- L2
-        wait for 40 ns;
-        i_left <= '1'; i_right <= '0'; -- L3
-        wait for 40 ns;
-        i_left <= '0'; i_right <= '0'; -- OFF
-        wait for 40 ns;
-
-        -- End of test
-        wait;
-    end process;
-
-end behavior;
+	-- Instantiate Unit Under Test (UUT)
+	uut: thunderbird_fsm port map (
+	   i_clk => w_clk,
+	   i_reset => w_R,
+	   i_left => w_RL(1),
+	   i_right => w_RL(0),
+	   o_lights_L(0) => w_lights(0),
+	   o_lights_L(1) => w_lights(1),
+	   o_lights_L(2) => w_lights(2),
+	   o_lights_R(0) => w_lights(3),
+	   o_lights_R(1) => w_lights(4),
+	   o_lights_R(2) => w_lights(5)
+	);
+	-- Clock generation
+	clk_proc : process
+	begin
+		w_clk <= '0';
+        wait for k_clk_period/2;
+		w_clk <= '1';
+		wait for k_clk_period/2;
+	end process;
+	-- Simulation process
+	sim_proc: process
+	begin		
+		w_RL <= "10";
+		wait for k_clk_period*1;
+		  assert w_lights = x"1" report "left 1 fails" severity failure;
+		wait for k_clk_period*1;
+		  assert w_lights = x"2" report "left 2 fails" severity failure;
+		wait for k_clk_period*1;
+		  assert w_lights = x"3" report "left 3 fails" severity failure;
+		wait for k_clk_period*1;
+		  assert w_lights = x"4" report "full left fails" severity failure;
+		w_RL <= "00";
+		wait for k_clk_period*1;
+		  assert w_lights = x"5" report "stops fails" severity failure;
+        w_RL <= "01";
+		wait for k_clk_period*1;
+		  assert w_lights = x"6" report "1st right fails" severity failure;
+		wait for k_clk_period*1;
+		  assert w_lights = x"7" report "2nd right fails" severity failure;
+		wait for k_clk_period*1;
+		  assert w_lights = x"8" report "3rd right fails" severity failure;
+		wait for k_clk_period*1;
+		  assert w_lights = x"9" report "full right fails" severity failure;
+		w_RL <= "11";
+		wait for k_clk_period*1;
+		  assert w_lights = x"10" report "flashes1 fail" severity failure;
+		wait for k_clk_period*1;
+		  assert w_lights = x"11" report "flashes2 fail" severity failure;
+		wait;
+	end process;
+end test_bench;
