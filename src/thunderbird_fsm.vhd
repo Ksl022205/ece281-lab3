@@ -95,48 +95,80 @@ entity thunderbird_fsm is
 end thunderbird_fsm;
 
 architecture Behavioral of thunderbird_fsm is
-    signal f_q: std_logic_vector(2 downto 0);
-    signal f_d: std_logic_vector(2 downto 0);
+    type state_type is (OFF, ON, R1, R2, R3, L1, L2, L3);
+    signal current_state, next_state: state_type;
 
 begin
+    -- Process for state transition on clock edge and reset
     process(i_clk, i_reset)
     begin
         if i_reset = '1' then
-            f_q <= "000";
+            current_state <= OFF;
         elsif rising_edge(i_clk) then
-            f_q <= f_d;
+            current_state <= next_state;
         end if;
     end process;
 
-    process(f_q, i_left, i_right)
+    -- Process for next state logic
+    process(current_state, i_left, i_right)
     begin
-        case f_q is
-            when "000" => -- OFF
+        case current_state is
+            when OFF =>
                 if i_left = '1' and i_right = '0' then
-                    f_d <= "101";
+                    next_state <= L1;
                 elsif i_right = '1' and i_left = '0' then
-                    f_d <= "010";
+                    next_state <= R1;
                 elsif i_left = '1' and i_right = '1' then
-                    f_d <= "001";
+                    next_state <= ON;
                 else
-                    f_d <= "000";
+                    next_state <= OFF;
                 end if;
-            when "001" => f_d <= "000"; -- ON
-            when "010" => f_d <= "011"; -- R1 -> R2
-            when "011" => f_d <= "100"; -- R2 -> R3
-            when "100" => f_d <= "000"; -- R3 -> OFF
-            when "101" => f_d <= "110"; -- L1 -> L2
-            when "110" => f_d <= "111"; -- L2 -> L3
-            when "111" => f_d <= "000"; -- L3 -> OFF
-            when others => f_d <= "000";
+            
+            when ON => next_state <= OFF;
+            
+            when R1 => next_state <= R2;
+            when R2 => next_state <= R3;
+            when R3 => next_state <= OFF;
+            
+            when L1 => next_state <= L2;
+            when L2 => next_state <= L3;
+            when L3 => next_state <= OFF;
+            
+            when others => next_state <= OFF;
         end case;
     end process;
 
-    o_lights_L(0) <= (not f_q(2) and not f_q(1) and f_q(0)) or (f_q(2) and f_q(1) and f_q(0));
-    o_lights_L(1) <= (not f_q(2) and not f_q(1) and f_q(0)) or (f_q(2) and f_q(1) and f_q(0)) or (f_q(2) and f_q(1) and not f_q(0));
-    o_lights_L(2) <= (not f_q(2) and not f_q(1) and f_q(0)) or (f_q(2) and f_q(1) and f_q(0)) or (f_q(2) and not f_q(1) and f_q(0)) or (f_q(2) and not f_q(1) and f_q(0));
-    o_lights_R(0) <= (not f_q(2) and not f_q(1) and f_q(0)) or (not f_q(2) and f_q(1) and not f_q(0)) or (not f_q(2) and f_q(1) and f_q(0)) or (f_q(2) and not f_q(1) and f_q(0));
-    o_lights_R(1) <= (not f_q(2) and not f_q(1) and f_q(0)) or (not f_q(2) and f_q(1) and f_q(0)) or (f_q(2) and not f_q(1) and not f_q(0));
-    o_lights_R(2) <= (not f_q(2) and not f_q(1) and f_q(0)) or (f_q(2) and not f_q(1) and not f_q(0));
-
+    -- Process to output light signals based on state
+    process(current_state)
+    begin
+        case current_state is
+            when OFF    => 
+                o_lights_L <= "000"; 
+                o_lights_R <= "000";
+            when ON     => 
+                o_lights_L <= "111"; 
+                o_lights_R <= "111";
+            when R1     => 
+                o_lights_L <= "000"; 
+                o_lights_R <= "100";
+            when R2     => 
+                o_lights_L <= "000"; 
+                o_lights_R <= "110";
+            when R3     => 
+                o_lights_L <= "000"; 
+                o_lights_R <= "111";
+            when L1     => 
+                o_lights_L <= "100"; 
+                o_lights_R <= "000";
+            when L2     => 
+                o_lights_L <= "110"; 
+                o_lights_R <= "000";
+            when L3     => 
+                o_lights_L <= "111"; 
+                o_lights_R <= "000";
+            when others => 
+                o_lights_L <= "000"; 
+                o_lights_R <= "000";
+        end case;
+    end process;
 end Behavioral;
