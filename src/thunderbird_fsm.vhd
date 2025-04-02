@@ -99,7 +99,7 @@ architecture Behavioral of thunderbird_fsm is
     type state_type is (OFF, L1, L2, L3, R1, R2, R3, HAZARD);
     signal current_state, next_state: state_type;
     
-    begin
+begin
     
     process(i_clk, i_reset)
     begin
@@ -126,11 +126,21 @@ architecture Behavioral of thunderbird_fsm is
             
             when L1 => next_state <= L2;
             when L2 => next_state <= L3;
-            when L3 => next_state <= OFF;
+            when L3 => 
+                if i_left = '1' then
+                    next_state <= L1;  -- Fix: Repeat left sequence if still held
+                else
+                    next_state <= OFF;
+                end if;
             
             when R1 => next_state <= R2;
             when R2 => next_state <= R3;
-            when R3 => next_state <= OFF;
+            when R3 => 
+                if i_right = '1' then
+                    next_state <= R1;  -- Fix: Repeat right sequence if still held
+                else
+                    next_state <= OFF;
+                end if;
             
             when HAZARD =>
                 if i_left = '0' and i_right = '0' then
