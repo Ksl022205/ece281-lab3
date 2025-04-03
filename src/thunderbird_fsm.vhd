@@ -100,19 +100,19 @@ begin
   -- Next state logic
   f_q_next(0) <= f_q(1);
   f_q_next(1) <= f_q(2);
-  f_q_next(2) <= f_q(7) AND i_left AND (NOT i_right);
+  f_q_next(2) <= f_q(7) and i_left and (not i_right);
   f_q_next(3) <= f_q(4);
   f_q_next(4) <= f_q(5);
-  f_q_next(5) <= f_q(7) AND (NOT i_left) AND i_right;
-  f_q_next(6) <= f_q(7) AND i_left AND i_right;
-  f_q_next(7) <= (f_q(7) AND (NOT i_left) AND (NOT i_right)) OR f_q(6) OR f_q(3) OR f_q(0);
+  f_q_next(5) <= f_q(7) and (not i_left) and i_right;
+  f_q_next(6) <= f_q(7) and i_left and i_right;
+  f_q_next(7) <= f_q(6) or f_q(3) or f_q(0) or (f_q(7) and (not i_left) and (not i_right));
   -- Output logic
-  o_lights_R(0) <= f_q(6) OR f_q(5) OR f_q(4) OR f_q(3);
-  o_lights_R(1) <= f_q(6) OR f_q(4) OR f_q(3);
-  o_lights_R(2) <= f_q(6) OR f_q(3);
-  o_lights_L(0) <= f_q(6) OR f_q(2) OR f_q(1) OR f_q(0);
-  o_lights_L(1) <= f_q(6) OR f_q(1) OR f_q(0);
-  o_lights_L(2) <= f_q(6) OR f_q(0);
+  o_lights_R(0) <= f_q(6) or f_q(5) or f_q(4) or f_q(3);
+  o_lights_R(1) <= f_q(6) or f_q(4) or f_q(3);
+  o_lights_R(2) <= f_q(6) or f_q(3);
+  o_lights_L(0) <= f_q(6) or f_q(2) or f_q(1) or f_q(0);
+  o_lights_L(1) <= f_q(6) or f_q(1) or f_q(0);
+  o_lights_L(2) <= f_q(6) or f_q(0);
   -- State register update
   register_proc : process (i_clk, i_reset)
   begin
